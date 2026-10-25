@@ -1,0 +1,12 @@
+{
+  "name": "products",
+  "version": "1.0.0",
+  "description": "差旅报销 - 产品组装模块（entry HAP）",
+  "main": "",
+  "author": "USTC HarmonyOS Course",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@ohos/common": "file:../common",
+    "@ohos/features": "file:../features"
+  }
+}

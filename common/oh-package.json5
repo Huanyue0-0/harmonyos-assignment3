@@ -1,0 +1,9 @@
+{
+  "name": "@ohos/common",
+  "version": "1.0.0",
+  "description": "差旅报销 - 领域模型、常量、服务与持久化（HAR）",
+  "main": "Index.ets",
+  "author": "USTC HarmonyOS Course",
+  "license": "Apache-2.0",
+  "dependencies": {}
+}

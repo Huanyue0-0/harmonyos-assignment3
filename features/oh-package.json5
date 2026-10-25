@@ -1,0 +1,11 @@
+{
+  "name": "@ohos/features",
+  "version": "1.0.0",
+  "description": "差旅报销 - 业务视图与 ViewModel 编排（HAR）",
+  "main": "Index.ets",
+  "author": "USTC HarmonyOS Course",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@ohos/common": "file:../common"
+  }
+}

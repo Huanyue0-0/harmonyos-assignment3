@@ -1,0 +1,16 @@
+{
+  "string": [
+    {
+      "name": "module_desc",
+      "value": "差旅报销产品模块"
+    },
+    {
+      "name": "ProductsAbility_desc",
+      "value": "差旅报销主界面"
+    },
+    {
+      "name": "ProductsAbility_label",
+      "value": "差旅报销"
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "module": {
+    "name": "products",
+    "type": "entry",
+    "description": "$string:module_desc",
+    "mainElement": "ProductsAbility",
+    "deviceTypes": [
+      "phone",
+      "tablet"
+    ],
+    "deliveryWithInstall": true,
+    "installationFree": false,
+    "pages": "$profile:main_pages",
+    "abilities": [
+      {
+        "name": "ProductsAbility",
+        "srcEntry": "./ets/productsability/ProductsAbility.ets",
+        "description": "$string:ProductsAbility_desc",
+        "icon": "$media:layered_image",
+        "label": "$string:ProductsAbility_label",
+        "startWindowIcon": "$media:startIcon",
+        "startWindowBackground": "$color:start_window_background",
+        "exported": true,
+        "orientation": "auto_rotation",
+        "skills": [
+          {
+            "entities": [
+              "entity.system.home"
+            ],
+            "actions": [
+              "ohos.want.action.home"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,162 @@
+# Agent 开发 Trace 日志
+# 项目：差旅报销小程序（Assignment 3）
+# 说明：本文件记录本次开发中实际发生的工具/技能调用（按执行顺序编号 T01..T35，
+#       未记录精确时钟时间，避免伪造时间戳）。所有"结果"均为当次调用的真实输出摘要。
+
+[T01] skill: deveco-cli
+      purpose : 获取构建/脚手架/文档查询命令规范
+      result  : OK，确认 `devecocli create|build|docs|run` 用法与沙箱要求
+
+[T02] skill: hmos-arkui-develop-skill
+      purpose : 加载 ArkTS/ArkUI 开发规范（写 .ets 前必读）
+      result  : FAILED -> "DEVECO_HOME environment variable is not configured. PLEASE set your DEVECO_HOME path manually and restart."
+      action  : 记录失败原因；改用内置 ArkTS/ArkUI 严格模式规则清单，并显式设置 DEVECO_HOME 后再调用 CLI
+
+[T03] bash : ls /Applications | grep -i deveco ; find ~/DevEcoStudioProjects/MyApplication
+      purpose : 定位 DevEco 安装路径与可编译参考工程
+      result  : /Applications/DevEco-Studio.app；参考工程 build-profile.json5、entry/build-profile.json5、module.json5、资源模板齐全
+
+[T04] bash : cat MyApplication/{build-profile.json5,oh-package.json5,entry/build-profile.json5,module.json5,app.json5,...}
+      purpose : 读取 API 21 可编译工程的构建配置与模板资源基线
+      result  : 确认 targetSdkVersion/compatibleSdkVersion = "6.0.1(21)"、runtimeOS=HarmonyOS、useNormalizedOHMUrl=true、modelVersion=6.0.1
+
+[T05] bash : devecocli create --app-name ReimbursementTmp --project-path <tmp>/reimb --api-level 21
+      purpose : T001 生成 Stage 工程骨架（禁止手工臆造工程文件）
+      result  : "Project created successfully." / Template integrity check passed.
+
+[T06] bash : cp -R <tmp>/reimb/{AppScope,hvigor,hvigorfile.ts,oh-package.json5,build-profile.json5,code-linter.json5,.gitignore} -> 项目根
+      purpose : T001 骨架落地（保留 spec/ 与 Assignment 3.docx 不动）
+      result  : OK
+
+[T07] bash : cp -R entry -> products ; rm 模板示例页 Index.ets/EntryAbility.ets ; mv entrybackupability -> productsability
+      purpose : T002 将 entry 改造为 products 模块
+      result  : OK
+
+[T08] write: common/{oh-package.json5,hvigorfile.ts,build-profile.json5,obfuscation-rules.txt,src/main/module.json5}
+      purpose : T003 创建 common HAR（name=@ohos/common, main=Index.ets, type=har）
+      result  : OK
+
+[T09] write: features/{oh-package.json5,hvigorfile.ts,build-profile.json5,obfuscation-rules.txt,src/main/module.json5}
+      purpose : T004 创建 features HAR（name=@ohos/features，dependencies: @ohos/common=file:../common）
+      result  : OK
+
+[T10] write: build-profile.json5 / oh-package.json5 / products/oh-package.json5
+      purpose : T005 注册三模块、统一 applyToProducts=default、compileSdkVersion=6.0.1(21)、file: 依赖
+      result  : OK
+
+[T11] write: AppScope/app.json5、AppScope string.json、products 资源(string/color/float/main_pages)、ProductsAbility.ets
+      purpose : T006 资源归一化 + ability 改造
+      result  : OK（同时移除模板 backup extensionAbility 与 backup_config.json）
+
+[T12] bash : mkdir -p docs/{trace,audit,report} screenshots scripts ; write screenshots/README.md 占位
+      purpose : T007 交付目录占位
+      result  : OK
+
+[T13] write: common/.../model/ReimbursementModels.ets
+      purpose : T008 领域模型（ExpenseItem @Observed、ReimbursementForm 工厂/深拷贝/按 id 替换、DraftRecord、OperationResult、DraftLoadResult）
+      result  : OK
+
+[T14] write: common/.../common/AppConstants.ets ; common/.../common/AppUtils.ets
+      purpose : T009 常量（存储键/费用类型/颜色/间距/弹窗宽度/诊断文案）；DateUtil/IdUtil/ErrorUtil
+      result  : OK
+
+[T15] write: common/.../service/AmountUtil.ets
+      purpose : T010 金额 parse/format/sumItems（全角归一化、转「分」累加、中文异常）
+      result  : OK
+
+[T16] write: common/.../service/CalculatorEngine.ets
+      purpose : T011 分词求值（一元负号、乘除优先、除零/非法表达式抛中文 Error）
+      result  : OK
+
+[T17] write: common/.../service/FormValidator.ets
+      purpose : T012 四级校验（事由→明细数→金额→日期）
+      result  : OK
+
+[T18] write: common/.../data/DraftRepository.ets
+      purpose : T013 preferences + flush + DraftRaw 强类型编解码 + 三态返回
+      result  : OK
+
+[T19] write: common/Index.ets ; features/.../viewmodel/ReimbursementViewModel.ets ; features/Index.ets
+      purpose : T014/T015/T016 barrel 与 ViewModel 编排
+      result  : OK
+
+[T20] write: features/.../views/{BasicInfoView,ExpenseListView,CalculatorPopup,PreviewPopup}.ets
+      purpose : T018/T019/T022/T025 四个业务视图
+      result  : OK
+
+[T21] write: products/.../pages/Index.ets
+      purpose : T017/T020/T024/T027/T028/T030 页面组装（@Provide、List、Relative 弹层、mediaquery、Toast、诊断开关）
+      result  : OK
+
+[T22] bash : devecocli build --build-mode debug（首次）
+      purpose : 早期发现模块依赖/导入/装饰器组合问题
+      result  : BUILD SUCCESSFUL in 4s52ms；仅 3 条 WARN：
+               - Missing module info for local modules '@ohos/common,@ohos/features'（包名与模块名不一致，hvigor 已知提示）
+               - ArkTS:WARN Index.ets:79 'getContext' has been deprecated
+               - 未配置 signingConfigs，跳过签名（产出 unsigned hap）
+
+[T23] bash : grep SDK d.ts（@ohos.mediaquery / UIContext / DatePickerDialogOptions / InputType / preferences）
+      purpose : 核对 off('change') 可选回调、showDatePickerDialog.onDateAccept、InputType.NUMBER_DECIMAL、preferences.getPreferences/put/flush 签名
+      result  : 全部命中，避免臆造 API
+
+[T24] bash : devecocli docs search 首选项 preferences flush --limit 5
+      purpose : 验证「保存后必须 flush」的官方结论
+      result  : 命中 FAQ「@ohos.data.preferences在App退出重启后，持久化数据丢失」——明确要求 put 后调用 flush()
+      action  : DraftRepository.save 中 `await store.flush()` 保留
+
+[T25] bash : devecocli docs search RelativeContainer alignRules 相对布局 --limit 3
+      purpose : 核对 alignRules 以 __container__ 为锚点的用法
+      result  : 命中 API 参考 ts-container-relativecontainer 与相对布局开发指南
+
+[T26] bash : devecocli docs search 媒体查询 mediaquery 横竖屏 --limit 3
+      purpose : 核对横竖屏监听方式
+      result  : 命中 FAQ「如何监听屏幕旋转」——推荐媒体查询接口
+
+[T27] edit : products/.../pages/Index.ets
+      purpose : 修复 T22 的 deprecated 告警
+      change  : getContext(this) -> this.getUIContext().getHostContext()
+      result  : 告警消失
+
+[T28] edit : build-profile.json5（HAR 模块声明形式）、AppConstants.ets（清理未使用常量）、CalculatorPopup/PreviewPopup（补齐 isLandscape 响应式）
+      purpose : 消除无意义告警来源 + 补齐 T032
+      result  : 告警仅剩 hvigor 包名提示与签名提示
+
+[T29] arkts_check: common 8 文件 → "No errors found in 8 file(s)."
+      purpose : T040 静态严格模式检查（第一批）
+      result  : PASS
+
+[T30] arkts_check: features + products 8 文件 → "No errors found in 8 file(s)."
+      purpose : T040 静态严格模式检查（第二批）
+      result  : PASS
+
+[T31] bash : devecocli build --build-mode debug（最终）
+      purpose : T040 编译门禁
+      result  : BUILD SUCCESSFUL（exitCode=0），产物 products-default-unsigned.hap
+
+# 备注
+# - 全程未使用 verify_ui / devecocli run：当前环境无连接设备，且 DevEco 6.0.1 不支持 devecocli emulator（需 ≥6.1.0）。
+# - 未伪造任何截图或运行日志；截图由用户在 DevEco Studio 运行后按 screenshots/README.md 补齐。
+
+[T32] bash : devecocli build clean && devecocli build --build-mode debug
+      purpose : 干净状态编译验证（SC-005）
+      result  : BUILD SUCCESSFUL，exitCode=0；此时 oh_modules 已生成，
+                "Missing module info for local modules" 提示不再出现
+
+[T33] bash : bash scripts/package.sh（第一版，使用系统 zip 命令）
+      purpose : T039 交付打包
+      result  : 产出 ZIP，但条目 942 个：spec/ 与 .hvigor/ 未被排除
+      action  : zip 的 -x 只匹配单个条目，改为对每个排除项同时排除
+                dir、dir/*、*/dir、*/dir/*
+
+[T34] bash : unzip -q -d <tmp> 校验产物
+      purpose : 校验排除规则与文件名
+      result  : 条目降到 117 个、无 spec/build/.hvigor；
+                但发现 docs/report/Assignment3_报告.docx 解压后中文名乱码
+                （macOS Info-ZIP 3.0 对非 ASCII 文件名不置 UTF-8 flag；且不支持 -UN=UTF8）
+      action  : 新增 scripts/zip_project.py，用 Python zipfile 归档（自动写 UTF-8 flag），
+                package.sh 改为调用它；实测解压文件名正常，flag_bits=0x800
+
+[T35] bash : bash scripts/package.sh（最终）
+      purpose : 交付打包（含全部修复后的产物）
+      result  : Assignment3_TeamX_StudentID1_StudentID2.zip，73 个文件、约 347KB，
+                13 个关键文件校验全部 [OK]，无 spec/build/.hvigor/.DS_Store 条目

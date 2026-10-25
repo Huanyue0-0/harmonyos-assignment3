@@ -1,0 +1,10 @@
+{
+  "module": {
+    "name": "features",
+    "type": "har",
+    "deviceTypes": [
+      "phone",
+      "tablet"
+    ]
+  }
+}

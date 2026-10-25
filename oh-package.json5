@@ -1,0 +1,14 @@
+{
+  "modelVersion": "6.0.1",
+  "name": "assignment3",
+  "version": "1.0.0",
+  "description": "HarmonyOS NEXT 差旅报销小程序（Assignment 3）",
+  "dependencies": {
+    "@ohos/common": "file:./common",
+    "@ohos/features": "file:./features"
+  },
+  "devDependencies": {
+    "@ohos/hypium": "1.0.25",
+    "@ohos/hamock": "1.0.0"
+  }
+}

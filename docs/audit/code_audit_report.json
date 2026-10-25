@@ -1,0 +1,227 @@
+{
+  "meta": {
+    "project": "差旅报销小程序（Assignment 3）",
+    "root": "/Users/annya/Documents/ustc/harmonyOS/assignment3",
+    "sdk": "HarmonyOS 6.0.1 (API 21), Stage 模型",
+    "modules": ["products(entry HAP)", "features(HAR)", "common(HAR)"],
+    "arktsFiles": 15,
+    "auditDate": "2026-10-25",
+    "tools": [
+      "arkts_check (ArkTS 严格模式静态检查)",
+      "devecocli build --build-mode debug (hvigor 编译)",
+      "devecocli docs search (本地官方文档查询)",
+      "人工代码走查 (layout / business 维度)"
+    ],
+    "verificationLevel": "build-only（无设备，未执行 UI 运行时验证）"
+  },
+  "compilationAudit": {
+    "status": "pass",
+    "items": [
+      {
+        "id": "C-01",
+        "result": "pass",
+        "location": "build-profile.json5",
+        "evidence": "三模块 products/common/features 均注册；products 目标 applyToProducts=[\"default\"]；compileSdkVersion/compatibleSdkVersion/targetSdkVersion 均为 6.0.1(21)，runtimeOS=HarmonyOS，strictMode.useNormalizedOHMUrl=true。",
+        "suggestion": "无需修改。若后续引入 HSP，需同步把 useNormalizedOHMUrl 保持一致。"
+      },
+      {
+        "id": "C-02",
+        "result": "pass",
+        "location": "products/oh-package.json5, features/oh-package.json5",
+        "evidence": "products 依赖 @ohos/common+@ohos/features（file:../），features 依赖 @ohos/common（file:../common），依赖关系无环。",
+        "suggestion": "保持单向依赖 products → features → common。"
+      },
+      {
+        "id": "C-03",
+        "result": "pass",
+        "location": "命令行 `devecocli build --build-mode debug`",
+        "evidence": "最终一次构建输出 `hvigor BUILD SUCCESSFUL`，exitCode=0；产物 products/build/default/outputs/default/products-default-unsigned.hap。",
+        "suggestion": "产物未签名，安装到设备前需在 DevEco Studio 配置 Signing Configs。"
+      },
+      {
+        "id": "C-04",
+        "result": "pass",
+        "location": "arkts_check（common 8 文件 + features/products 8 文件）",
+        "evidence": "两批均返回 `No errors found in 8 file(s).`，覆盖 arkts-no-any-unknown、arkts-no-untyped-obj-literals、arkts-no-indexed-signatures 等规则。",
+        "suggestion": "新增代码后继续以 arkts_check + devecocli build 双门禁验证。"
+      },
+      {
+        "id": "C-05",
+        "result": "pass",
+        "location": "hvigor 构建输出（首轮 vs 清洁重建）",
+        "evidence": "首轮构建（oh_modules 尚未生成）曾出现 `WARN: Missing module info for local modules '@ohos/common,@ohos/features'`：hvigor 按包名匹配 modules 列表，而本地模块包名(@ohos/common)与模块名(common)不一致。依赖安装到 oh_modules 后，`devecocli build clean` + `devecocli build --build-mode debug` 清洁重建（exitCode=0）不再出现该提示。",
+        "suggestion": "该提示仅在首次解析本地依赖时出现且不影响编译；保留 scoped 包名以满足作业要求。若需彻底消除，可把包名改为 `common`/`features`，但会偏离作业命名。"
+      },
+      {
+        "id": "C-06",
+        "result": "fixed",
+        "location": "products/src/main/ets/pages/Index.ets",
+        "evidence": "初版使用 `getContext(this)` 触发 `ArkTS:WARN 'getContext' has been deprecated`；已改为 `this.getUIContext().getHostContext() as common.UIAbilityContext`，告警消失。",
+        "suggestion": "统一通过 UIContext 获取上下文/提示/媒体查询，避免全局 API 废弃。"
+      }
+    ]
+  },
+  "syntaxAudit": {
+    "status": "pass",
+    "items": [
+      {
+        "id": "S-01",
+        "result": "pass",
+        "location": "common/src/main/ets/service/CalculatorEngine.ets",
+        "evidence": "自行实现 normalize→tokenize→两遍扫描求值（先乘除后加减），文件内无 eval/Function/new Function，符合 ArkTS 禁用动态执行的要求。",
+        "suggestion": "如需支持括号表达式，可在 tokenize 阶段引入运算符栈，避免使用动态执行。"
+      },
+      {
+        "id": "S-02",
+        "result": "pass",
+        "location": "common/src/main/ets/data/DraftRepository.ets:144,182",
+        "evidence": "`JSON.parse(text) as DraftRaw` 先落到含可选字段的原始接口，再对 traveler/department/purpose/startDate/endDate/id/category/date/amount/remark 逐个 `typeof` 校验后才构造领域对象；无 `any`/下标访问/`in` 探测。",
+        "suggestion": "新增字段时同步在 DraftRaw 与校验分支中登记，避免出现「静默丢弃字段」。"
+      },
+      {
+        "id": "S-03",
+        "result": "pass",
+        "location": "全工程 .ets",
+        "evidence": "无 any/unknown/ESObject、无对象字面量作类型、无索引签名、无解构声明、无 var、无 for..in、无非空断言 !；对象字面量仅出现在有明确类型上下文的实参位置（如 showToast({message})、showDatePickerDialog({...})）。",
+        "suggestion": "新增代码保持「先声明接口/类，再构造实例」的写法。"
+      },
+      {
+        "id": "S-04",
+        "result": "pass",
+        "location": "全工程 catch 分支",
+        "evidence": "所有 catch 均为无类型标注形式 `catch (error)`，统一通过 `ErrorUtil.message(error, fallback)` 提取中文信息；无向用户暴露堆栈。",
+        "suggestion": "保持 single-source：新增异常分支复用 ErrorUtil，避免各处重复写 as Error。"
+      },
+      {
+        "id": "S-05",
+        "result": "pass",
+        "location": "common/src/main/ets/common/AppUtils.ets",
+        "evidence": "静态工具类内部统一使用类名调用（DateUtil.pad2 / IdUtil.counter），静态方法内未出现 `this`，规避 arkts-no-standalone-this。",
+        "suggestion": "无。"
+      }
+    ]
+  },
+  "layoutAudit": {
+    "status": "pass",
+    "items": [
+      {
+        "id": "L-01",
+        "result": "pass",
+        "location": "products/src/main/ets/pages/Index.ets:367",
+        "evidence": "页面根节点为 `RelativeContainer()`，width/height 100%；表单主体在 `List({ space })`（:371）内以 ListItem 承载 BasicInfoView / ExpenseListView / 底部占位，满足「List 渲染表单」要求。",
+        "suggestion": "明细超过 50 条时 List 自身滚动即可；无需改为 LazyForEach（数据量为单机草稿级别）。"
+      },
+      {
+        "id": "L-02",
+        "result": "pass",
+        "location": "features/src/main/ets/views/CalculatorPopup.ets:255 / PreviewPopup.ets:88",
+        "evidence": "两个弹窗的根节点均为 `RelativeContainer()`，内部分两层：全尺寸遮罩 Column（100%×100%，点击关闭）+ 卡片 Column，卡片用 `.alignRules({ center: {anchor:'__container__', align: VerticalAlign.Center}, middle: {anchor:'__container__', align: HorizontalAlign.Center} })` 居中；未使用 CustomDialog。",
+        "suggestion": "若后续需要拖拽/多弹窗，可在 RelativeContainer 内追加兄弟层并以 id 锚点约束。"
+      },
+      {
+        "id": "L-03",
+        "result": "pass",
+        "location": "features/src/main/ets/views/BasicInfoView.ets:75,86,99",
+        "evidence": "基本信息使用 `Flex({ wrap: FlexWrap.Wrap, justifyContent: FlexAlign.SpaceBetween })`，字段宽度由 `fieldWidth()` 返回 '48%'（横屏）/ '100%'（竖屏）；出差事由使用 TextArea 自动换行。",
+        "suggestion": "无。"
+      },
+      {
+        "id": "L-04",
+        "result": "pass",
+        "location": "features/src/main/ets/views/ExpenseListView.ets:193,286",
+        "evidence": "新增行与明细行同样使用 FlexWrap.Wrap + 48%/100% 宽度；行内元素（类别标签、日期、金额输入、计算按钮）均以 Flex 排版，无固定像素宽度堆叠。",
+        "suggestion": "无。"
+      },
+      {
+        "id": "L-05",
+        "result": "pass",
+        "location": "features/src/main/ets/views/CalculatorPopup.ets:352 / PreviewPopup.ets:211",
+        "evidence": "横屏时卡片宽度改为 56%/78%，并分别以 constraintSize(maxWidth 460/520, maxHeight 90%/88%) 限制；计算器按键高度横屏 40vp、竖屏 46vp；预览内容区 Scroll + layoutWeight(1)，保证安全区内完整显示。",
+        "suggestion": "在折叠屏/平板等更宽屏幕下可再把 PreviewPopup 的 maxWidth 提高，当前值对手机足够。"
+      },
+      {
+        "id": "L-06",
+        "result": "pass",
+        "location": "products/src/main/ets/pages/Index.ets:307",
+        "evidence": "标题使用 `LongPressGesture` + `.gesture()`，与同区域的 Toast 点击不冲突；诊断徽标仅在开关开启时插入，不改变布局主干。",
+        "suggestion": "无。"
+      }
+    ]
+  },
+  "businessAudit": {
+    "status": "pass",
+    "items": [
+      {
+        "id": "B-01",
+        "result": "pass",
+        "location": "products/src/main/ets/pages/Index.ets:31 + features/.../BasicInfoView.ets:2 + ExpenseListView.ets:113",
+        "evidence": "页面 `@Provide('reimbursementForm') form`，子视图 `@Consume('reimbursementForm') form`，预览弹窗 `@Link form`，计算器内部 `@State`，全部为状态管理 V1；未出现 @Local/@Param/@Provider 等 V2 装饰器。",
+        "suggestion": "禁止在后续迭代中混用 V2 装饰器，否则同一 struct 会编译失败。"
+      },
+      {
+        "id": "B-02",
+        "result": "pass",
+        "location": "common/src/main/ets/service/AmountUtil.ets:105,117,140",
+        "evidence": "parse 归一化全角数字/千分位并校验字符集；toCents = Math.round(value*100)；sumItems 逐条 try/catch 以「分」整数累加后 /100；format 统一 toFixed(2)。避免浮点累加误差。",
+        "suggestion": "若未来支持外币，需要在模型上增加币种字段并在合计前分组。"
+      },
+      {
+        "id": "B-03",
+        "result": "pass",
+        "location": "common/src/main/ets/service/CalculatorEngine.ets",
+        "evidence": "除零抛「除数不能为 0」；空表达式/尾随运算符/连续运算符/多小数点/非法字符均抛中文 Error；UI 侧 `try/catch` 转 Toast 且保留原输入（CalculatorPopup.evaluate:153-162）。",
+        "suggestion": "无。"
+      },
+      {
+        "id": "B-04",
+        "result": "pass",
+        "location": "common/src/main/ets/service/FormValidator.ets:18,23,43,56",
+        "evidence": "校验顺序严格为：出差事由必填 → 至少一条明细 → 逐条金额合法且 >0 → 起止日期合法且 end>=start；失败返回带 field 定位的 OperationResult，页面 Toast 具体原因且不清空表单。",
+        "suggestion": "无。"
+      },
+      {
+        "id": "B-05",
+        "result": "pass",
+        "location": "common/src/main/ets/data/DraftRepository.ets:75,144",
+        "evidence": "保存：encode → put → `await store.flush()`；读取：get 后判断空串返回 empty，JSON 解析失败/字段类型不符返回 error；页面仅在 status===success 时 applyFrom，其余分支只 Toast，不覆盖当前表单。",
+        "suggestion": "如需多份草稿，可把 key 扩展为列表并补充删除能力。"
+      },
+      {
+        "id": "B-06",
+        "result": "pass",
+        "location": "products/src/main/ets/pages/Index.ets:58,72,116",
+        "evidence": "mediaquery 在 aboutToAppear 注册、aboutToDisappear `off('change')` 注销；Toast 走 `getUIContext().getPromptAction()`；日期选择走 `getUIContext().showDatePickerDialog` 并在 onDateAccept 回填 YYYY-MM-DD；均未直接 import promptAction。",
+        "suggestion": "无。"
+      },
+      {
+        "id": "B-07",
+        "result": "pass",
+        "location": "features/src/main/ets/views/ExpenseListView.ets:10 / common/.../ReimbursementModels.ets:8",
+        "evidence": "ExpenseItem 标注 @Observed，明细行 ExpenseRow 使用 @ObjectLink；计算器回填通过 ViewModel.updateItemAmount 就地更新目标对象并替换数组引用，实现「只刷新目标行 + 合计同步」。",
+        "suggestion": "禁止把 replaceItem 改成放入新的 ExpenseItem 实例，否则 @ObjectLink 会指向旧对象导致回填不刷新。"
+      },
+      {
+        "id": "B-08",
+        "result": "deviation",
+        "location": "features/src/main/ets/views/ExpenseListView.ets:286",
+        "evidence": "费用明细行采用 ForEach + Flex 双列渲染，而非嵌套 List。原因是横屏需要两列换行网格，List 只能单列；页面级 List 已承担「表单列表 + 滚动」职责。",
+        "suggestion": "如评分严格要求明细也用 List，可在竖屏分支改为 List、横屏保留 Flex（会增加分支复杂度）。"
+      }
+    ]
+  },
+  "summary": {
+    "dimensions": {
+      "compilation": { "status": "pass", "pass": 6, "warn": 0, "fixed": 1, "fail": 0 },
+      "syntax": { "status": "pass", "pass": 5, "warn": 0, "fixed": 0, "fail": 0 },
+      "layout": { "status": "pass", "pass": 6, "warn": 0, "fixed": 0, "fail": 0 },
+      "business": { "status": "pass", "pass": 8, "deviation": 1, "fail": 0 }
+    },
+    "passCount": 4,
+    "failCount": 0,
+    "conclusion": "四维审计全部通过（编译/语法/布局/业务）。clean 重建 exitCode=0，仅剩未签名提示（命令行环境未配置签名材料）；业务侧 1 项设计偏离（明细行用 ForEach 而非嵌套 List）已在报告中说明理由。",
+    "openRisks": [
+      "未在真机/模拟器上做运行时验证（环境无设备），UI 行为（Toast 展示、弹窗遮挡、横竖屏重排）需用户按 screenshots/README.md 验证。",
+      "命令行产物为 unsigned HAP，安装前需在 DevEco Studio 配置签名。"
+    ]
+  }
+}
