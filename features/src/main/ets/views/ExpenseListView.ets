@@ -2,6 +2,37 @@ import { AppConstants, ExpenseItem, ReimbursementForm } from '@ohos/common';
 import { ReimbursementViewModel } from '../viewmodel/ReimbursementViewModel';
 
 /**
+ * 费用类别选择标签。
+ * 独立 @Component 使得 @Prop selected 能响应状态变化自动高亮。
+ * 必须定义在文件顶层（ArkUI V1 不支持嵌套 @Component）。
+ */
+@Component
+struct CategoryChip {
+  private category: string = '';
+  @Prop selected: boolean = false;
+  private onClickCategory: (category: string) => void = () => {
+  };
+
+  build() {
+    Text(this.category)
+      .fontSize(AppConstants.FONT_SMALL)
+      .fontColor(this.selected ? Color.White : AppConstants.COLOR_TEXT_SECONDARY)
+      .backgroundColor(this.selected ? AppConstants.COLOR_PRIMARY : AppConstants.COLOR_CHIP_BG)
+      .padding({
+        left: AppConstants.SPACE_MD,
+        right: AppConstants.SPACE_MD,
+        top: AppConstants.SPACE_XS,
+        bottom: AppConstants.SPACE_XS
+      })
+      .borderRadius(AppConstants.RADIUS_SM)
+      .margin({ right: AppConstants.SPACE_SM, bottom: AppConstants.SPACE_XS })
+      .onClick(() => {
+        this.onClickCategory(this.category);
+      })
+  }
+}
+
+/**
  * 单条费用明细行。
  * 使用 @ObjectLink 订阅 @Observed 的 ExpenseItem，计算器回填或金额修改时只刷新本行。
  */
@@ -139,25 +170,6 @@ export struct ExpenseListView {
     }
   }
 
-  @Builder
-  categoryChip(category: string, selected: boolean) {
-    Text(category)
-      .fontSize(AppConstants.FONT_SMALL)
-      .fontColor(selected ? Color.White : AppConstants.COLOR_TEXT_SECONDARY)
-      .backgroundColor(selected ? AppConstants.COLOR_PRIMARY : AppConstants.COLOR_CHIP_BG)
-      .padding({
-        left: AppConstants.SPACE_MD,
-        right: AppConstants.SPACE_MD,
-        top: AppConstants.SPACE_XS,
-        bottom: AppConstants.SPACE_XS
-      })
-      .borderRadius(AppConstants.RADIUS_SM)
-      .margin({ right: AppConstants.SPACE_SM, bottom: AppConstants.SPACE_XS })
-      .onClick(() => {
-        this.newItem.category = category;
-      })
-  }
-
   build() {
     Column() {
       Flex({ alignItems: ItemAlign.Center, justifyContent: FlexAlign.SpaceBetween }) {
@@ -182,7 +194,13 @@ export struct ExpenseListView {
 
         Flex({ wrap: FlexWrap.Wrap }) {
           ForEach(AppConstants.EXPENSE_CATEGORIES, (category: string) => {
-            this.categoryChip(category, this.newItem.category === category)
+            CategoryChip({
+              category: category,
+              selected: this.newItem.category === category,
+              onClickCategory: (cat: string) => {
+                this.newItem.category = cat;
+              }
+            })
           }, (category: string) => category)
         }
         .width('100%')

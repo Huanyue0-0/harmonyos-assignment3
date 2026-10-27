@@ -44,6 +44,7 @@ export class ExpenseItem {
 }
 
 /** 报销单 */
+@Observed
 export class ReimbursementForm {
   traveler: string;
   department: string;

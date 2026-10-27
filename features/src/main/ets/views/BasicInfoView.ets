@@ -1,6 +1,52 @@
 import { AppConstants, ReimbursementForm } from '@ohos/common';
 
 /**
+ * 日期选择行。
+ * 独立 @Component 使得 @Prop value 能响应日期变化自动更新显示文本。
+ * 必须定义在文件顶层（ArkUI V1 不支持嵌套 @Component）。
+ */
+@Component
+struct DateRow {
+  private label: string = '';
+  @Prop value: string = '';
+  private field: string = '';
+  private fieldWidth: string = '100%';
+  private onPickDate: (field: string) => void = () => {
+  };
+
+  build() {
+    Column() {
+      Flex({ alignItems: ItemAlign.Center }) {
+        Text(this.label)
+          .fontSize(AppConstants.FONT_SMALL)
+          .fontColor(AppConstants.COLOR_TEXT_SECONDARY)
+      }
+      .width('100%')
+      .margin({ bottom: AppConstants.SPACE_XS })
+
+      Flex({ justifyContent: FlexAlign.SpaceBetween, alignItems: ItemAlign.Center }) {
+        Text(this.value.length > 0 ? this.value : '请选择日期')
+          .fontSize(AppConstants.FONT_BODY)
+          .fontColor(this.value.length > 0 ? AppConstants.COLOR_TEXT : AppConstants.COLOR_TEXT_SECONDARY)
+        Text('选择')
+          .fontSize(AppConstants.FONT_SMALL)
+          .fontColor(AppConstants.COLOR_PRIMARY)
+      }
+      .width('100%')
+      .height(AppConstants.INPUT_HEIGHT)
+      .padding({ left: AppConstants.SPACE_MD, right: AppConstants.SPACE_MD })
+      .backgroundColor(AppConstants.COLOR_CHIP_BG)
+      .borderRadius(AppConstants.RADIUS_SM)
+      .onClick(() => {
+        this.onPickDate(this.field);
+      })
+    }
+    .width(this.fieldWidth)
+    .margin({ bottom: AppConstants.SPACE_MD })
+  }
+}
+
+/**
  * 基本信息视图（US1）。
  * 状态来源：@Consume 共享报销单；布局：Flex 换行实现竖屏单列 / 横屏两列。
  */
@@ -31,31 +77,6 @@ export struct BasicInfoView {
     }
     .width('100%')
     .margin({ bottom: AppConstants.SPACE_XS })
-  }
-
-  @Builder
-  dateRow(label: string, value: string, field: string) {
-    Column() {
-      this.fieldLabel(label, false)
-      Flex({ justifyContent: FlexAlign.SpaceBetween, alignItems: ItemAlign.Center }) {
-        Text(value.length > 0 ? value : '请选择日期')
-          .fontSize(AppConstants.FONT_BODY)
-          .fontColor(value.length > 0 ? AppConstants.COLOR_TEXT : AppConstants.COLOR_TEXT_SECONDARY)
-        Text('选择')
-          .fontSize(AppConstants.FONT_SMALL)
-          .fontColor(AppConstants.COLOR_PRIMARY)
-      }
-      .width('100%')
-      .height(AppConstants.INPUT_HEIGHT)
-      .padding({ left: AppConstants.SPACE_MD, right: AppConstants.SPACE_MD })
-      .backgroundColor(AppConstants.COLOR_CHIP_BG)
-      .borderRadius(AppConstants.RADIUS_SM)
-      .onClick(() => {
-        this.onPickDate(field);
-      })
-    }
-    .width(this.fieldWidth())
-    .margin({ bottom: AppConstants.SPACE_MD })
   }
 
   build() {
@@ -112,8 +133,24 @@ export struct BasicInfoView {
         .width('100%')
         .margin({ bottom: AppConstants.SPACE_MD })
 
-        this.dateRow('开始日期', this.form.startDate, 'startDate')
-        this.dateRow('结束日期', this.form.endDate, 'endDate')
+        DateRow({
+          label: '开始日期',
+          value: this.form.startDate,
+          field: 'startDate',
+          fieldWidth: this.fieldWidth(),
+          onPickDate: (f: string) => {
+            this.onPickDate(f);
+          }
+        })
+        DateRow({
+          label: '结束日期',
+          value: this.form.endDate,
+          field: 'endDate',
+          fieldWidth: this.fieldWidth(),
+          onPickDate: (f: string) => {
+            this.onPickDate(f);
+          }
+        })
       }
       .width('100%')
     }
