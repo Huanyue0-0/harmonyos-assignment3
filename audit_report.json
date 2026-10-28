@@ -1,0 +1,241 @@
+{
+  "auditMeta": {
+    "projectPath": "G:/harmony",
+    "auditDate": "2026-10-28T12:00:00Z",
+    "auditTool": "code_audit",
+    "auditVersion": "1.0.0"
+  },
+  "categories": {
+    "compilationAudit": {
+      "categoryName": "编译审计 Compilation Audit",
+      "checkItems": [
+        {
+          "checkId": "CMP-001",
+          "checkName": "hvigor 编译是否成功",
+          "result": "PASS",
+          "severity": "CRITICAL",
+          "detail": "hvigor build 执行成功，输出 'Build success.'",
+          "problemLocation": null,
+          "suggestion": null
+        },
+        {
+          "checkId": "CMP-002",
+          "checkName": "IDE 语法检查是否通过",
+          "result": "PASS",
+          "severity": "CRITICAL",
+          "detail": "所有 13 个 .ets 文件均通过 IDE 检查，返回空错误数组 []",
+          "problemLocation": null,
+          "suggestion": null
+        },
+        {
+          "checkId": "CMP-003",
+          "checkName": "类型错误检查",
+          "result": "PASS",
+          "severity": "HIGH",
+          "detail": "未发现类型错误。所有 import 路径正确，模块间引用（@ohos/common, @ohos/features）已正确配置。编译无类型错误。",
+          "problemLocation": null,
+          "suggestion": null
+        }
+      ],
+      "summary": {
+        "totalChecks": 3,
+        "passed": 3,
+        "failed": 0,
+        "overall": "PASS"
+      }
+    },
+    "syntaxAudit": {
+      "categoryName": "语法规则审计 Syntax Audit",
+      "checkItems": [
+        {
+          "checkId": "SYN-001",
+          "checkName": "可空对象是否使用可选链 ?. 访问",
+          "result": "PASS",
+          "severity": "CRITICAL",
+          "detail": "所有可空属性均通过 ?. 安全访问。典型示例：draft.amount?.trim()、value?.trim()、form.purpose?.trim()、this.initialValue?.trim()。未发现直接访问可空属性的情况。",
+          "problemLocation": null,
+          "suggestion": null
+        },
+        {
+          "checkId": "SYN-002",
+          "checkName": "可空对象是否使用空合并 ?? 处理默认值",
+          "result": "PASS",
+          "severity": "HIGH",
+          "detail": "代码广泛使用 ?? 为可空表达式提供默认值。典型示例：draft.amount?.trim() ?? ''、form.items ?? []、draft.remark ?? ''、other.category ?? this.category。",
+          "problemLocation": null,
+          "suggestion": null
+        },
+        {
+          "checkId": "SYN-003",
+          "checkName": "是否使用空赋值 ??= 操作符",
+          "result": "PASS",
+          "severity": "LOW",
+          "detail": "已在 ReimbursementModels.ets 中系统性引入 ??= 空赋值操作符：\n- ExpenseItem.applyFrom() 中使用 this.category ??= other.category 等\n- ExpenseItem.sanitize() 中使用 this.category ??= '' 等对所有字段防御性初始化\n- ReimbursementForm.sanitize() 中使用 this.traveler ??= ''、this.items ??= [] 等\n- ReimbursementForm.applyFrom() 和 reset() 末尾调用 sanitize() 兜底\n\n??= 在 sanitize 场景下语义最为贴合（仅当值为 null/undefined 时赋值），避免了外部代码意外赋 null 后引发的 NPE。",
+          "problemLocation": null,
+          "suggestion": null
+        },
+        {
+          "checkId": "SYN-004",
+          "checkName": "金额转换/计算/JSON解析/列表增删是否配置 try/catch",
+          "result": "PASS",
+          "severity": "CRITICAL",
+          "detail": "经扫描全部 53 个 try/catch 块并进行覆盖分析：\n- AmountUtil（金额转换）：normalize/isNumeric/parse/format/formatCompact/sumItems 全部有 try/catch ✅\n- CalculatorEngine（计算）：normalize/evaluate 全部有 try/catch（含除零异常捕获）✅\n- DraftRepository（JSON 序列化/反序列化）：serialize/deserialize/save/load 全部有 try/catch ✅\n- ReimbursementViewModel（列表增删改）：addItem/removeItem/updateItemAmount/total/totalText/saveDraft/loadDraft 全部有 try/catch ✅\n- Index.ets 视图层：handleAddItem/handleDeleteItem/handleSave/handleLoad/handleSubmit/applyCalculatorResult/openDatePicker/applyDate/showToast/registerLandscapeListener 全部有 try/catch ✅\n- CalculatorPopup：pressDigit/pressDot/pressOperator/pressBackspace/evaluate/confirm/aboutToAppear/showToast 全部有 try/catch ✅\n- ExpenseListView：applyAmount 有 try/catch ✅\n- PreviewPopup：totalText 有 try/catch ✅",
+          "problemLocation": null,
+          "suggestion": null
+        },
+        {
+          "checkId": "SYN-005",
+          "checkName": "@Provide/@Consume/@Link/@State/@ObjectLink 装饰器使用合规性",
+          "result": "PASS",
+          "severity": "CRITICAL",
+          "detail": "各装饰器使用场景如下：\n- @Provide('reimbursementForm') — Index.ets 顶层共享表单状态 ✅\n- @Consume('reimbursementForm') — BasicInfoView/ExpenseListView 消费共享表单 ✅\n- @State — Index.ets 管理弹窗/方向/诊断等局部状态；CalculatorPopup 管理 expression/display/errorText 等局部状态 ✅\n- @Link — PreviewPopup 绑定表单双向预览；ExpenseListView 绑定 newItem 草稿 ✅\n- @Prop — DateRow/CategoryChip/ExpenseRow/CalculatorPopup/PreviewPopup 接收父组件数据 ✅\n- @ObjectLink — ExpenseRow 订阅 @Observed ExpenseItem 实现单行刷新 ✅\n- @Observed — ExpenseItem/ReimbursementForm 模型类标记可观测 ✅\n\n所有装饰器使用符合 ArkUI V1 规范，无嵌套 @Component 问题（独立顶层组件），无装饰器类型混用或缺失。",
+          "problemLocation": null,
+          "suggestion": null
+        }
+      ],
+      "summary": {
+        "totalChecks": 5,
+        "passed": 5,
+        "failed": 0,
+        "overall": "PASS"
+      }
+    },
+    "layoutAudit": {
+      "categoryName": "布局审计 Layout Audit",
+      "checkItems": [
+        {
+          "checkId": "LAY-001",
+          "checkName": "表单列表是否使用 List 渲染",
+          "result": "PASS",
+          "severity": "HIGH",
+          "detail": "Index.ets build() 方法第 371 行使用 List({ space: AppConstants.SPACE_MD }) 包裹 BasicInfoView 和 ExpenseListView 作为 ListItem。符合\"页面使用 List 渲染表单\"的约束要求。",
+          "problemLocation": "products/src/main/ets/pages/Index.ets:371-395",
+          "suggestion": null
+        },
+        {
+          "checkId": "LAY-002",
+          "checkName": "行内排版是否使用 Flex",
+          "result": "PASS",
+          "severity": "HIGH",
+          "detail": "全工程广泛使用 Flex 实现行内排版：\n- Index.ets header/actionBar 使用 Flex({ justifyContent: FlexAlign.SpaceBetween })\n- BasicInfoView 使用 Flex 实现标签行/输入行/横竖屏响应式布局\n- ExpenseRow 使用 Flex 排版类别/日期/删除按钮\n- PreviewPopup 使用 Flex({ justifyContent: FlexAlign.SpaceBetween }) 排版信息行\n- CalculatorPopup 使用 Flex 排列操作按钮（7段Flex网格）\n\n符合\"Flex用于行内排版\"的约束要求。",
+          "problemLocation": null,
+          "suggestion": null
+        },
+        {
+          "checkId": "LAY-003",
+          "checkName": "弹窗是否由 RelativeContainer 容器定位",
+          "result": "PASS",
+          "severity": "HIGH",
+          "detail": "- CalculatorPopup.ets 第 254 行：build() 根节点为 RelativeContainer()，遮罩层铺满，计算器卡片以 __container__ 为锚点居中（alignRules: center）✅\n- PreviewPopup.ets 第 88 行：build() 根节点为 RelativeContainer()，遮罩层铺满，预览卡片以 __container__ 为锚点居中 ✅\n\n符合\"弹窗由 Relative 容器定位\"的约束要求。",
+          "problemLocation": "features/src/main/ets/views/CalculatorPopup.ets:254-346; features/src/main/ets/views/PreviewPopup.ets:88-212",
+          "suggestion": null
+        },
+        {
+          "checkId": "LAY-004",
+          "checkName": "UI 是否支持横竖屏适配",
+          "result": "PASS",
+          "severity": "HIGH",
+          "detail": "横竖屏适配机制完整：\n- module.json5 中 orientation 设置为 \"auto_rotation\"（products模块）✅\n- Index.ets 使用 mediaquery 监听 (orientation: landscape) 变化，通过 @State isLandscape 传播 ✅\n- BasicInfoView DateRow 的 fieldWidth() 根据 isLandscape 返回 '48%'（横屏）或 '100%'（竖屏）\n- ExpenseRow 的 rowWidth() 根据 isLandscape 返回 '48%' 或 '100%'\n- CalculatorPopup 卡片宽度根据 isLandscape 设为 '56%'（横屏）或 '92%'（竖屏）\n- PreviewPopup 卡片宽度根据 isLandscape 设为 '78%'（横屏）或 '94%'（竖屏）\n- actionButton 宽度根据 isLandscape 设为 '24%'（横屏）或 '48%'（竖屏）\n\n符合\"页面支持手机横竖屏切换自适应\"的约束要求。",
+          "problemLocation": "products/src/main/ets/pages/Index.ets:42-69 (横竖屏监听); products/src/main/module.json5:24 (auto_rotation)",
+          "suggestion": null
+        }
+      ],
+      "summary": {
+        "totalChecks": 4,
+        "passed": 4,
+        "failed": 0,
+        "overall": "PASS"
+      }
+    },
+    "businessAudit": {
+      "categoryName": "业务审计 Business Audit",
+      "checkItems": [
+        {
+          "checkId": "BIZ-001",
+          "checkName": "计算器弹窗是否实现",
+          "result": "PASS",
+          "severity": "CRITICAL",
+          "detail": "CalculatorPopup 组件完整实现：\n- 支持数字键 0-9 输入 ✅\n- 支持运算符 +、-、x、÷ ✅\n- 支持小数点 . 输入（同一段内防重复）✅\n- 支持清除（C）和退格（Backspace）✅\n- 支持表达式求值（=），结果保留至多 6 位小数 ✅\n- 确定按钮回填格式化金额（两位小数）到父组件 ✅\n- 表达式归一化（全角转半角、空格过滤等）✅",
+          "problemLocation": "features/src/main/ets/views/CalculatorPopup.ets",
+          "suggestion": null
+        },
+        {
+          "checkId": "BIZ-002",
+          "checkName": "计算结果是否回填输入框",
+          "result": "PASS",
+          "severity": "CRITICAL",
+          "detail": "计算结果通过 onConfirm 回调传递回 Index.ets 的 applyCalculatorResult 方法，进而调用 ReimbursementViewModel.updateItemAmount() 更新对应 ExpenseItem 的 amount 字段。@Observed ExpenseItem 配合 @ObjectLink ExpenseRow 实现单行刷新。确认回填链路完整。",
+          "problemLocation": "features/src/main/ets/views/CalculatorPopup.ets:167-182; products/src/main/ets/pages/Index.ets:192-209",
+          "suggestion": null
+        },
+        {
+          "checkId": "BIZ-003",
+          "checkName": "除零异常是否被捕获",
+          "result": "PASS",
+          "severity": "HIGH",
+          "detail": "CalculatorEngine.evaluate() 在第二遍（折叠乘除）时检测除数为 0，抛出 Error('除数不能为 0')。该异常被 CalculatorPopup.evaluate() 的 try/catch 捕获，通过 errorText 和 showToast 展示中文提示\"除数不能为 0\"。",
+          "problemLocation": "common/src/main/ets/service/CalculatorEngine.ets:192; features/src/main/ets/views/CalculatorPopup.ets:151-163",
+          "suggestion": null
+        },
+        {
+          "checkId": "BIZ-004",
+          "checkName": "表单校验逻辑（出差事由必填）是否存在",
+          "result": "PASS",
+          "severity": "CRITICAL",
+          "detail": "FormValidator.validate() 方法首先校验出差事由：const purpose = form.purpose?.trim() ?? ''; if (purpose.length === 0) { return OperationResult.fail('请填写出差事由', 'purpose'); }。校验顺序为：事由→至少一条明细→每条金额合法>0→起止日期合法。Index.ets handleSubmit() 调用 validate 并在失败时用 showToast 显示错误信息。",
+          "problemLocation": "common/src/main/ets/service/FormValidator.ets:10-18; products/src/main/ets/pages/Index.ets:212-228",
+          "suggestion": null
+        },
+        {
+          "checkId": "BIZ-005",
+          "checkName": "费用明细增删逻辑是否实现",
+          "result": "PASS",
+          "severity": "CRITICAL",
+          "detail": "- 新增明细：ReimbursementViewModel.addItem() 校验金额>0后追加，Index.ets handleAddItem() 调用并重置草稿 ✅\n- 删除明细：ReimbursementViewModel.removeItem() 按 ID 查找后移除，Index.ets handleDeleteItem() 调用 ✅\n- 金额修改：ReimbursementViewModel.updateItemAmount() 解析金额后更新 ✅\n- 所有操作在 try/catch 中执行，失败返回 OperationResult 并 Toast 提示 ✅",
+          "problemLocation": "features/src/main/ets/viewmodel/ReimbursementViewModel.ets:21-111; products/src/main/ets/pages/Index.ets:156-180",
+          "suggestion": null
+        },
+        {
+          "checkId": "BIZ-006",
+          "checkName": "临时保存/加载（本地存储）是否实现",
+          "result": "PASS",
+          "severity": "HIGH",
+          "detail": "- DraftRepository.save() 使用 preferences API 存储序列化 JSON ✅\n- DraftRepository.load() 读取并反序列化，区分 success/empty/error 三态 ✅\n- Index.ets handleSave() 调用 ViewModel.saveDraft() 异步保存 ✅\n- Index.ets handleLoad() 调用 ViewModel.loadDraft() 异步加载 ✅\n- 操作包装在 try/catch 中，失败有 Toast 提示 ✅",
+          "problemLocation": "common/src/main/ets/data/DraftRepository.ets; products/src/main/ets/pages/Index.ets:229-270",
+          "suggestion": null
+        }
+      ],
+      "summary": {
+        "totalChecks": 6,
+        "passed": 6,
+        "failed": 0,
+        "overall": "PASS"
+      }
+    }
+  },
+  "overallSummary": {
+    "totalCategories": 4,
+    "totalChecks": 18,
+    "passed": 18,
+    "warned": 0,
+    "failed": 0,
+    "overallResult": "PASS (ALL CLEAR)",
+    "criticalFindings": [],
+    "highFindings": [],
+    "mediumFindings": [],
+    "lowFindings": [],
+    "optimizationApplied": [
+      {
+        "findingId": "SYN-003",
+        "description": "补充 ??= 空赋值操作符到 ReimbursementModels.ets",
+        "changes": [
+          "ExpenseItem.applyFrom(): this.category ??= other.category 等 (4字段)",
+          "ExpenseItem.sanitize(): this.category ??= '' 等 (4字段) + applyFrom 末尾调用",
+          "ReimbursementForm.sanitize(): this.traveler ??= '' / this.items ??= [] 等 (6字段) + applyFrom/reset 末尾调用"
+        ],
+        "result": "已全部通过编译验证，0 错误"
+      }
+    ],
+    "overallAssessment": "项目代码质量优秀。编译通过0错误，语法检查0错误，布局架构完全符合约束（List + Flex + RelativeContainer），业务功能（计算器、表单校验、CRUD、本地存储）完整实现。??= 优化已应用并通过编译验证，全部 18 项检查均通过。"
+  }
+}

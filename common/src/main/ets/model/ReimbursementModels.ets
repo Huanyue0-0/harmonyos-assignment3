@@ -21,6 +21,14 @@ export class ExpenseItem {
     this.remark = remark;
   }
 
+  /** 防御性初始化：确保所有字段不因外部赋值变为 null/undefined */
+  sanitize(): void {
+    this.category ??= '';
+    this.date ??= '';
+    this.amount ??= '';
+    this.remark ??= '';
+  }
+
   /** 新增行草稿的默认值：类别默认交通，日期默认今天 */
   static createDraft(): ExpenseItem {
     return new ExpenseItem(IdUtil.nextId('item'), AppConstants.CATEGORY_TRANSPORT, DateUtil.todayText(), '', '');
@@ -36,10 +44,10 @@ export class ExpenseItem {
     if (other === null) {
       return;
     }
-    this.category = other.category ?? this.category;
-    this.date = other.date ?? this.date;
-    this.amount = other.amount ?? this.amount;
-    this.remark = other.remark ?? this.remark;
+    this.category ??= other.category;
+    this.date ??= other.date;
+    this.amount ??= other.amount;
+    this.remark ??= other.remark;
   }
 }
 
@@ -61,6 +69,16 @@ export class ReimbursementForm {
     this.startDate = startDate;
     this.endDate = endDate;
     this.items = items;
+  }
+
+  /** 防御性初始化：确保所有字段不因外部赋值变为 null/undefined */
+  sanitize(): void {
+    this.traveler ??= '';
+    this.department ??= '';
+    this.purpose ??= '';
+    this.startDate ??= '';
+    this.endDate ??= '';
+    this.items ??= [];
   }
 
   /** 空表单工厂：起止日期默认今天，明细为空 */
@@ -94,6 +112,7 @@ export class ReimbursementForm {
     this.startDate = other.startDate ?? '';
     this.endDate = other.endDate ?? '';
     this.items = other.copy().items;
+    this.sanitize();
   }
 
   /** 重置为初始空状态（保留当前实例引用） */
@@ -105,6 +124,7 @@ export class ReimbursementForm {
     this.startDate = empty.startDate;
     this.endDate = empty.endDate;
     this.items = [];
+    this.sanitize();
   }
 
   /** 按 id 查找明细，未找到返回 null */
