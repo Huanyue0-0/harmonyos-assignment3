@@ -228,10 +228,7 @@ private applyCalculatorResult(value: string): void {
 | 6 | `06_validate_fail.png` | 校验失败 | 清空出差事由 → 点「提交」 | Toast「请填写出差事由」，表单数据保留 |
 | 7 | `07_storage_fail.png` | 存储失败 | 长按标题开启诊断 → 点「临时保存」 | 红色徽标「诊断：存储失败」+ Toast 失败提示 |
 | 8 | `08_main_landscape.png` | 主界面（横屏） | 旋转为横屏 | 基本信息两列、明细两列、按钮一行四个 |
-| 9 | `09_calculator_landscape.png` | 横屏弹窗 | 横屏下打开计算器 | 卡片更宽但不溢出安全区 |
-| 10 | `10_load_empty.png` | 暂无历史 | 首次安装直接点「加载历史」 | Toast「暂无历史数据」 |
 
-拍摄建议：使用 `devecocli ui screenshot --path ./screenshots/xx.png`（需连接设备）或设备自带截屏；保持系统语言中文，避免状态栏干扰评分。
 
 ---
 
